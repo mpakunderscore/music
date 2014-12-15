@@ -1,3 +1,5 @@
+package store;
+
 import java.io.Serializable;
 import java.util.Map;
 

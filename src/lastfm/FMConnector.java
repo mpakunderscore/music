@@ -1,3 +1,5 @@
+package lastfm;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -7,12 +9,10 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import store.Track;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -21,19 +21,18 @@ import java.util.TreeMap;
  * Time: 2:00 AM
  * To change this template use File | Settings | File Templates.
  */
-public class LastFMConnector {
+public class FMConnector {
 
     protected String api_key;
     protected String api_url = "http://ws.audioscrobbler.com/2.0/?format=json&api_key="; //&method=user.gettopartists
     
-    public LastFMConnector(String api_key) {
+    public FMConnector(String api_key) {
         this.api_key = api_key;
         api_url += api_key;
     }
 
     public static String sendPostRequest(final String url) throws IOException {
 
-        System.out.println("url: "+url);
         DefaultHttpClient client = new DefaultHttpClient();
 
         HttpPost get = new HttpPost(url);
@@ -45,11 +44,9 @@ public class LastFMConnector {
         
         if (entity != null) {
             out = EntityUtils.toString(entity);
-            entity.consumeContent();
         }
 
         client.getConnectionManager().shutdown();
-        System.out.print("out: "+out);
         return out;
     }
 
@@ -65,13 +62,43 @@ public class LastFMConnector {
 
         JSONArray artists_array = (JSONArray) ((JSONObject) json.get("topartists")).get("artist");
 
-        List<String> artists = new ArrayList<String>();
+        List<String> artists = new ArrayList<>();
 
-        for (int i = 0; i < artists_array.size(); i++) {
-            artists.add((String) ((JSONObject) artists_array.get(i)).get("name"));
+        for (Object anArtists_array : artists_array) {
+            artists.add((String) ((JSONObject) anArtists_array).get("name"));
         }
 
         return artists;
+    }
+
+    public Map<String, Track> artist_getTopTracks(final String artist) throws ParseException, IOException {
+
+//        startTimestamp (Optional) : An unix timestamp to start at.
+//        page (Optional) : The page number to fetch. Defaults to first page.
+//        endTimestamp (Optional) : An unix timestamp to end at.
+
+        final String url_string = api_url + "&method=artist.gettoptracks&artist=" + artist.replace(" ", "+");
+        String in = sendPostRequest(url_string);
+        JSONObject json = (JSONObject) new JSONParser().parse(in);
+
+        JSONArray tracks_array = (JSONArray) ((JSONObject) json.get("toptracks")).get("track");
+
+        Map<String, Track> tracks = new HashMap<>();
+
+        for (Object aTracks_array : tracks_array) {
+
+            final String name = (String) ((JSONObject) aTracks_array).get("name");
+
+            Track track = new Track();
+            track.setName(name);
+            track.setArtist(artist);
+//            track.setAlbum((String) ((JSONObject) ((JSONObject) aTracks_array).get("album")).get("#text"));
+//            track.setTags(track_getTopTags(track.getName(), artist)); //TODO tags count
+
+            tracks.put(name, track);
+        }
+
+        return tracks;
     }
 
     public List<Track> user_getArtistTracks(final String user, final String artist) throws ParseException, IOException {
@@ -86,25 +113,25 @@ public class LastFMConnector {
 
         JSONArray tracks_array = (JSONArray) ((JSONObject) json.get("artisttracks")).get("track");
 
-        List<Track> tracks = new ArrayList<Track>();
-        List<String> track_names = new ArrayList<String>();
+        List<Track> tracks = new ArrayList<>();
+        List<String> track_names = new ArrayList<>();
 
-        for (int i = 0; i < tracks_array.size(); i++) {
+        for (Object aTracks_array : tracks_array) {
 
-            final String name = (String) ((JSONObject) tracks_array.get(i)).get("name");
-            if (track_names.contains(name)) continue; //TODO plays count
+            final String name = (String) ((JSONObject) aTracks_array).get("name");
+            if (track_names.contains(name))
+                continue; //TODO plays count
 
             track_names.add(name);
             Track track = new Track();
             track.setName(name);
             track.setArtist(artist);
-            track.setAlbum((String) ((JSONObject) ((JSONObject) tracks_array.get(i)).get("album")).get("#text"));
+            track.setAlbum((String) ((JSONObject) ((JSONObject) aTracks_array).get("album")).get("#text"));
 //            track.setTags(track_getTopTags(track.getName(), artist)); //TODO tags count
 
             tracks.add(track);
         }
 
-        System.out.println(tracks.size());
         return tracks;
     }
 
@@ -123,8 +150,8 @@ public class LastFMConnector {
 
             tags_array = (JSONArray) toptags.get("tag");
             if (tags_array != null)
-            for (int i = 0; i < tags_array.size(); i++)
-                tags.put((String) ((JSONObject) tags_array.get(i)).get("name"), (String) ((JSONObject) tags_array.get(i)).get("count"));
+                for (Object aTags_array : tags_array)
+                    tags.put((String) ((JSONObject) aTags_array).get("name"), (String) ((JSONObject) aTags_array).get("count"));
 
         } catch (ClassCastException e) {
 
