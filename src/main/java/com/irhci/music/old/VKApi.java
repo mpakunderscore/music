@@ -1,4 +1,4 @@
-package old; /**
+package com.irhci.music.old; /**
  * Created by IntelliJ IDEA.
  * User: pavelkuzmin
  * Date: 12/20/12
@@ -36,7 +36,7 @@ public class VKApi  {
 
     private String buildURL(TreeMap param) {
 
-        String api_url = "http://api.vk.com/api.php?";
+        String api_url = "http://api.com.irhci.music.vk.com/api.php?";
         StringBuilder sig = new StringBuilder();
         Object[] keys =  param.keySet().toArray();
 

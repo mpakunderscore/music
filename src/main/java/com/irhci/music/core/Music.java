@@ -1,12 +1,12 @@
-package core;
+package com.irhci.music.core;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
-import lastfm.FMConnector;
-import store.Track;
-import vk.VKConnector;
+import com.irhci.music.lastfm.FMConnector;
+import com.irhci.music.store.Track;
+import com.irhci.music.vk.VKConnector;
 
 import java.util.HashMap;
 import java.util.List;

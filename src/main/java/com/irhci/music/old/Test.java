@@ -1,7 +1,6 @@
-package old;
+package com.irhci.music.old;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Created by pavelkuzmin on 15/12/14.

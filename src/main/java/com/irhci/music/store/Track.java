@@ -1,4 +1,4 @@
-package store;
+package com.irhci.music.store;
 
 import java.io.Serializable;
 import java.util.Map;

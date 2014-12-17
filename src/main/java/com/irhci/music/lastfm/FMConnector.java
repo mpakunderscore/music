@@ -1,4 +1,4 @@
-package lastfm;
+package com.irhci.music.lastfm;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -9,7 +9,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import store.Track;
+import com.irhci.music.store.Track;
 
 import java.io.IOException;
 import java.util.*;

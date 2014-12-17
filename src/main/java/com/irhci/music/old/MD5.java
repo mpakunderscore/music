@@ -1,4 +1,4 @@
-package old;
+package com.irhci.music.old;
 
 import java.security.MessageDigest;
 
@@ -18,7 +18,7 @@ final class MD5 {
         try {
 
             StringBuilder code = new StringBuilder();
-            MessageDigest messageDigest =  MessageDigest.getInstance("old.MD5");
+            MessageDigest messageDigest =  MessageDigest.getInstance("com.irhci.music.old.MD5");
             byte bytes[] = input.getBytes();
             byte digest[] = messageDigest.digest(bytes);
 
