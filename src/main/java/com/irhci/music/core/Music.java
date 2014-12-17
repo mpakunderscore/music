@@ -8,6 +8,8 @@ import com.irhci.music.lastfm.FMConnector;
 import com.irhci.music.store.Track;
 import com.irhci.music.vk.VKConnector;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,6 @@ import java.util.Map;
  */
 public class Music {
 
-    public static final String systemPath = "system/";
     public static final String libraryPath = "library/";
 
     private static HashMap<String, String> params;
@@ -29,17 +30,18 @@ public class Music {
 
     public static void main(String[] argv) throws Exception {
 
-        final String value = "mpak_";
+        final String user = "mpak_";
 
         readConfig();
 
         FMConnector last_fm = new FMConnector(params.get("lastfm_api_key"));
 
         Map<String, Map<String, Track>> artists_tracks = new HashMap<>();
-        List<String> artists = last_fm.user_getTopArtists(value, "50");
+        List<String> artists = last_fm.user_getTopArtists(user, "50");
 
         for (final String artist : artists)
-            artists_tracks.put(artist, last_fm.artist_getTopTracks(artist));
+//            artists_tracks.put(artist, last_fm.artist_getTopTracks(artist));
+            artists_tracks.put(artist, last_fm.user_getArtistTracks(user, artist));
 
         VKConnector vk = new VKConnector(params.get("vk_login"), params.get("vk_password"));
 //
@@ -49,7 +51,7 @@ public class Music {
 
     private static void readConfig() throws IOException {
 
-        FileReader fileReader = new FileReader(systemPath + "main.conf");
+        FileReader fileReader = new FileReader("main.conf");
         BufferedReader bufferedReader = new BufferedReader(fileReader);
 
         String line;

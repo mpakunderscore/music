@@ -72,14 +72,17 @@ public class VKConnector {
             if (!new File(artist_path).exists())
                 new File(artist_path).mkdir();
 
-            final String vk = "http://com.irhci.music.vk.com/search?c%5Bperformer%5D=1&c%5Bq%5D=" + artist.getKey().replace(" ", "%20") + "&c%5Bsection%5D=audio";
+            final String vk = "http://vk.com/search?c%5Bperformer%5D=1&c%5Bq%5D=" + artist.getKey().replace(" ", "%20") + "&c%5Bsection%5D=audio";
 
             final org.jsoup.nodes.Document doc = Jsoup.connect(vk).cookies(vkCookies).timeout(vkTimeout).get();
             final Elements divs = doc.select("div[class=ai_body]");
 
             if (divs.size() == 0) {
 
-                System.out.println("Can't find divs in com.irhci.music.vk.html: " + artist.getKey());
+                System.out.println("Can't find tracks for: " + artist.getKey());
+                System.out.println(vk);
+                //TODO
+
                 continue;
             }
 
@@ -155,7 +158,7 @@ public class VKConnector {
     protected void getVKCookies() throws IOException {
 
         Connection.Response res = Jsoup
-                .connect("https://login.com.irhci.music.vk.com/?act=login")
+                .connect("https://login.vk.com/?act=login")
                 .data("email", login)
                 .data("pass", password)
                 .method(Connection.Method.POST)

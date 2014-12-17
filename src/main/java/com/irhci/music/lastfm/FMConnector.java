@@ -101,7 +101,7 @@ public class FMConnector {
         return tracks;
     }
 
-    public List<Track> user_getArtistTracks(final String user, final String artist) throws ParseException, IOException {
+    public Map<String, Track> user_getArtistTracks(final String user, final String artist) throws ParseException, IOException {
 
 //        startTimestamp (Optional) : An unix timestamp to start at.
 //        page (Optional) : The page number to fetch. Defaults to first page.
@@ -113,7 +113,7 @@ public class FMConnector {
 
         JSONArray tracks_array = (JSONArray) ((JSONObject) json.get("artisttracks")).get("track");
 
-        List<Track> tracks = new ArrayList<>();
+        Map<String, Track> tracks = new HashMap<>();
         List<String> track_names = new ArrayList<>();
 
         for (Object aTracks_array : tracks_array) {
@@ -129,7 +129,7 @@ public class FMConnector {
             track.setAlbum((String) ((JSONObject) ((JSONObject) aTracks_array).get("album")).get("#text"));
 //            track.setTags(track_getTopTags(track.getName(), artist)); //TODO tags count
 
-            tracks.add(track);
+            tracks.put(name, track);
         }
 
         return tracks;
