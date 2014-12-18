@@ -115,9 +115,9 @@ public class VKConnector {
             for (final Track track : artistsTracks.get(artist).values()) {
 
                 final String filePath = artistPath + track.getName().replace("/", "//") + ".mp3";
-                final String url = track.getUrl();
+                final String urlString = track.getUrl();
 
-                if (url == null || url.length() == 0) {
+                if (urlString == null || urlString.length() == 0) {
 
                     System.out.println("URL is null, skip: " + track.getArtist() + " - " + track.getName());
                     continue;
@@ -131,11 +131,11 @@ public class VKConnector {
                     continue;
                 }
 
-                final URL website = new URL(url);
+                final URL url = new URL(urlString);
 
                 try {
 
-                    final ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                    final ReadableByteChannel rbc = Channels.newChannel(url.openStream());
                     final FileOutputStream fos = new FileOutputStream(file);
                     fos.getChannel().transferFrom(rbc, 0, 1 << 24);
                     fos.close();

@@ -8,17 +8,6 @@
     <artifactId>music</artifactId>
     <version>0.3</version>
 
-    <repositories>
-        <repository>
-            <id>YOUR-PROJECT-NAME-mvn-repo</id>
-            <url>https://raw.github.com/YOUR-USERNAME/YOUR-PROJECT-NAME/mvn-repo/</url>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
