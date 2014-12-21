@@ -1,6 +1,15 @@
 package com.irhci.music;
 
+import com.mpatric.mp3agic.*;
+import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -27,7 +36,69 @@ public class VK {
     private static final int timeout = 10000;
     private static Map<String, String> cookies;
 
-    public static void findTrackURLs(final Map<String, Collection<Track>> artistsTracks) throws Exception {
+    public static void findTrackURLs2(final Map<String, Collection<Track>> artistsTracks) throws IOException, InvalidDataException, UnsupportedTagException {
+
+        for (final Map.Entry<String, Collection<Track>> artist : artistsTracks.entrySet()) {
+
+            for (Track track : artist.getValue()) {
+
+                String fullTrackName = artist.getKey() + " - " + track.getName();
+
+                final String url = "https://api.vk.com/method/audio.search.json?q=" +
+                        URLEncoder.encode(fullTrackName, "UTF-8") +
+                        "&access_token=" + token;
+
+                DefaultHttpClient httpClient = new DefaultHttpClient();
+                HttpGet getRequest = new HttpGet(url);
+                getRequest.addHeader("accept", "application/json");
+
+                HttpResponse response = httpClient.execute(getRequest);
+
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    throw new RuntimeException("Failed : HTTP error code : "
+                            + response.getStatusLine().getStatusCode());
+                }
+
+                BufferedReader br = new BufferedReader(new InputStreamReader((response.getEntity().getContent())));
+
+                StringBuilder result = new StringBuilder();
+                String line = "";
+                while ((line = br.readLine()) != null) {
+                    result.append(line);
+                }
+
+                JSONObject object = (JSONObject) JSONValue.parse(result.toString());
+
+                httpClient.getConnectionManager().shutdown();
+
+                System.out.println(fullTrackName + " " + track.getDuration());
+
+                for (Object element : object.values()) {
+
+                    final String vkTrackArtist = ;
+                    final String vkTrackUrl = ;
+                    final String vkTrackName = ;
+                    final String vkTrackTime = ;
+
+                    final int vkTrackTimeInt = (vkTrackTime.contains(":") ? Integer.parseInt(vkTrackTime.split(":")[0]) * 60 + Integer.parseInt(vkTrackTime.split(":")[1]) : 0);
+                    final boolean timeEqual = (vkTrackTimeInt - track.getDuration()) >= -1 && (vkTrackTimeInt - track.getDuration()) <= 1;
+
+                    String status = (vkTrackArtist.toLowerCase().equals(artist.getKey().toLowerCase()) && vkTrackName.toLowerCase().equals(track.getName().toLowerCase()) ? "+" : "-") +
+                            " " + (timeEqual ? "+" : (track.getDuration() == 0 ? "?" : "-"));
+
+                    System.out.println("\t" + status + " " +
+                            vkTrackArtist + " - " + vkTrackName + " " + vkTrackTimeInt);
+
+                    if (status.equals("+ +") || status.equals("+ ?")) {
+                        saveTrack(track, vkTrackUrl);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public static void findTrackURLs(final Map<String, Collection<Track>> artistsTracks) throws IOException, InvalidDataException, UnsupportedTagException {
 
         for (final Map.Entry<String, Collection<Track>> artist : artistsTracks.entrySet()) {
 
@@ -39,23 +110,28 @@ public class VK {
                         URLEncoder.encode(fullTrackName, "UTF-8") +
                         "&c%5Bsection%5D=audio";
 
-                final org.jsoup.nodes.Document doc = Jsoup.connect(url).cookies(cookies).timeout(timeout).get();
+//                https://oauth.vk.com/blank.html#access_token=1bb4d3010ad1a62d8a11c1f3c5030072dfd0861753236b7a0cf9cccf904c94303a864dfacc44e9741a31d&expires_in=86400&user_id=20483167
+
+                org.jsoup.nodes.Document doc;
+                try {
+                    doc = Jsoup.connect(url).cookies(cookies).timeout(timeout).get();
+                } catch (Exception e) {
+                    System.err.println("Can't connect to vc.com: " + fullTrackName);
+                    System.err.println("\t" + url);
+                    continue;
+                    //TODO
+                }
+
                 final Elements ai_body = doc.select("div[class=ai_body]");
 
                 if (ai_body.size() == 0) {
-
                     System.err.println("Can't find tracks for: " + fullTrackName);
                     System.err.println("\t" + url);
-                    //TODO
-
                     continue;
+                    //TODO
                 }
 
-
-//                String trackTime = (track.getDuration() == 0 ? "0:0" : track.getDuration()/60 + ":" + track.getDuration()%60);
-//                System.out.println(fullTrackName + " " + trackTime);
                 System.out.println(fullTrackName + " " + track.getDuration());
-
 
                 for (Element element : ai_body) {
 
@@ -65,72 +141,105 @@ public class VK {
                     final String vkTrackTime = element.select("div[class=ai_dur]").text();
 
                     final int vkTrackTimeInt = (vkTrackTime.contains(":") ? Integer.parseInt(vkTrackTime.split(":")[0]) * 60 + Integer.parseInt(vkTrackTime.split(":")[1]) : 0);
+                    final boolean timeEqual = (vkTrackTimeInt - track.getDuration()) >= -1 && (vkTrackTimeInt - track.getDuration()) <= 1;
 
                     String status = (vkTrackArtist.toLowerCase().equals(artist.getKey().toLowerCase()) && vkTrackName.toLowerCase().equals(track.getName().toLowerCase()) ? "+" : "-") +
-                            " " + (vkTrackTimeInt == track.getDuration() ? "+" : (track.getDuration() == 0 ? "?" : "-"));
+                            " " + (timeEqual ? "+" : (track.getDuration() == 0 ? "?" : "-"));
 
-                    System.out.println("\t" +
-                            status + " " +
+                    System.out.println("\t" + status + " " +
                             vkTrackArtist + " - " + vkTrackName + " " + vkTrackTimeInt);
 
-                    if (status.equals("+ +"))
+                    if (status.equals("+ +") || status.equals("+ ?")) {
+                        saveTrack(track, vkTrackUrl);
                         break;
-
-//                    Thread.sleep(1000);
+                    }
                 }
             }
         }
     }
 
+    public static void saveTrack(Track track, String trackUrl) throws IOException, InvalidDataException, UnsupportedTagException {
 
-    public void saveTracks(final Map<String, Map<String, Track>> artistsTracks) throws MalformedURLException {
+        final String artistPath = Music.prop.getProperty("libraryPath") + track.getArtist() + "/";
 
-        for (final String artist : artistsTracks.keySet()) {
+        if (!new File(artistPath).exists()) //TODO
+            new File(artistPath).mkdir();
 
-            final String artistPath = Music.prop.getProperty("libraryPath") + artist + "/";
+        final String filePath = artistPath + track.getName().replace("/", "|") + ".mp3"; //TODO
 
-            if (!new File(artistPath).exists())
-                new File(artistPath).mkdir();
+        final File file = new File(filePath);
 
-            for (final Track track : artistsTracks.get(artist).values()) {
+        if (file.exists()) {
+            System.out.println("Exist, skip: " + track.getArtist() + " - " + track.getName());
+            return;
+        }
 
-                final String filePath = artistPath + track.getName().replace("/", "//") + ".mp3";
-                final String urlString = track.getUrl();
+        final URL url = new URL(trackUrl);
 
-                if (urlString == null || urlString.length() == 0) {
+        try {
 
-                    System.out.println("URL is null, skip: " + track.getArtist() + " - " + track.getName());
-                    continue;
-                }
+            final ReadableByteChannel rbc = Channels.newChannel(url.openStream());
+            final FileOutputStream fos = new FileOutputStream(file);
+            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+            fos.close();
+            rbc.close();
 
-                final File file = new File(filePath);
+        } catch (IOException e) {
+            System.err.println("IO error: " + track.getArtist() + " - " + track.getName());;
+        }
 
-                if (file.exists()) {
+        checkId3v2Tags(track, filePath);
+    }
 
-                    System.out.println("Exist, skip: " + track.getArtist() + " - " + track.getName());
-                    continue;
-                }
+    private static void checkId3v2Tags(Track track, String filePath) throws InvalidDataException, IOException, UnsupportedTagException {
 
-                final URL url = new URL(urlString);
+        Collection<Tag> tags = Track.getTopTags(track.getArtist(), track.getMbid(), Music.prop.getProperty("lastfmApiKey"));
+        track = Track.getInfo(track.getArtist(), track.getMbid(), Music.prop.getProperty("lastfmApiKey"));
 
-                try {
+        Mp3File mp3file = new Mp3File(filePath);
 
-                    final ReadableByteChannel rbc = Channels.newChannel(url.openStream());
-                    final FileOutputStream fos = new FileOutputStream(file);
-                    fos.getChannel().transferFrom(rbc, 0, 1 << 24);
-                    fos.close();
-                    rbc.close();
+        System.out.println("Length of this mp3 is: " + mp3file.getLengthInSeconds() + " seconds");
+        System.out.println("Bitrate: " + mp3file.getLengthInSeconds() + " kbps " + (mp3file.isVbr() ? "(VBR)" : "(CBR)"));
+        System.out.println("Sample rate: " + mp3file.getSampleRate() + " Hz");
+        System.out.println("Has ID3v1 tag?: " + (mp3file.hasId3v1Tag() ? "YES" : "NO"));
+        System.out.println("Has ID3v2 tag?: " + (mp3file.hasId3v2Tag() ? "YES" : "NO"));
+        System.out.println("Has custom tag?: " + (mp3file.hasCustomTag() ? "YES" : "NO"));
 
-                } catch (IOException e) {
+        if (mp3file.hasId3v1Tag()) {
 
-                    System.out.println("IO error: " + track.getArtist() + " - " + track.getName());
-                    continue;
-                }
+            ID3v1 id3v1Tag = mp3file.getId3v1Tag();
+            System.out.println("Track: " + id3v1Tag.getTrack());
+            System.out.println("Artist: " + id3v1Tag.getArtist());
+            System.out.println("Title: " + id3v1Tag.getTitle());
+            System.out.println("Album: " + id3v1Tag.getAlbum());
+            System.out.println("Year: " + id3v1Tag.getYear());
+            System.out.println("Genre: " + id3v1Tag.getGenre() + " (" + id3v1Tag.getGenreDescription() + ")");
+            System.out.println("Comment: " + id3v1Tag.getComment());
+        }
 
-                System.out.println("Downloaded: " + track.getArtist() + " - " + track.getName());
+        if (mp3file.hasId3v2Tag()) {
 
-//                MP3File mp3_file = new MP3File(file);
-//                mp3_file.getBitRate();
+            ID3v2 id3v2Tag = mp3file.getId3v2Tag();
+            System.out.println("Track: " + id3v2Tag.getTrack());
+            System.out.println("Artist: " + id3v2Tag.getArtist());
+            System.out.println("Title: " + id3v2Tag.getTitle());
+            System.out.println("Album: " + id3v2Tag.getAlbum());
+            System.out.println("Year: " + id3v2Tag.getYear());
+            System.out.println("Genre: " + id3v2Tag.getGenre() + " (" + id3v2Tag.getGenreDescription() + ")");
+            System.out.println("Comment: " + id3v2Tag.getComment());
+            System.out.println("Composer: " + id3v2Tag.getComposer());
+            System.out.println("Publisher: " + id3v2Tag.getPublisher());
+            System.out.println("Original artist: " + id3v2Tag.getOriginalArtist());
+            System.out.println("Album artist: " + id3v2Tag.getAlbumArtist());
+            System.out.println("Copyright: " + id3v2Tag.getCopyright());
+            System.out.println("URL: " + id3v2Tag.getUrl());
+            System.out.println("Encoder: " + id3v2Tag.getEncoder());
+
+            byte[] albumImageData = id3v2Tag.getAlbumImage();
+            if (albumImageData != null) {
+
+                System.out.println("Have album image data, length: " + albumImageData.length + " bytes");
+                System.out.println("Album image mime type: " + id3v2Tag.getAlbumImageMimeType());
             }
         }
     }

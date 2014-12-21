@@ -21,10 +21,7 @@ public class Music {
 
         readConfig();
 
-        final String vkUser = "";
-        final String vkPassword = "";
-
-        final String lastfmUser = "";
+        final String lastfmUser = "mpak_";
         final String lastfmPassword = "";
 
 //        Session session = Authenticator.getMobileSession(lastfmUser, lastfmPassword,
@@ -53,8 +50,8 @@ public class Music {
             }
         }
 
-        VK.setCookies(vkUser, vkPassword);
-        VK.findTrackURLs(artistsTracks);
+//        VK.setCookies(vkUser, vkPassword);
+        VK.findTrackURLs2(artistsTracks);
 
         System.out.println(artistsTracks);
    }
